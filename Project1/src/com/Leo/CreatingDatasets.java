@@ -76,7 +76,7 @@ public class CreatingDatasets {
     }
 
     private void addCustomer(int maxID) throws IOException {
-        File file = new File("Customers.txt");
+        File file = new File("Customers");
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
         for (int i = 0; i < maxID; i++) {
             writer.write(newCustomer(i + 1) + "\r\n");
@@ -85,7 +85,7 @@ public class CreatingDatasets {
     }
 
     private void addTransaction(int maxID) throws IOException {
-        File file = new File("Transactions.txt");
+        File file = new File("Transactions");
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
         for (int i = 0; i < maxID; i++) {
             writer.write(newTransaction(i + 1) + "\r\n");
