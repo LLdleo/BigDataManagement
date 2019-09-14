@@ -30,12 +30,14 @@ public class WordCount {
         @Override
         public void reduce(Text key, Iterator<IntWritable> values, OutputCollector<Text, IntWritable> output, Reporter reporter) throws IOException {
             int sum = 0;
-            while (values.hasNext()) { sum += values.next().get(); }
+            while (values.hasNext()) {
+                sum += values.next().get();
+            }
             output.collect(key, new IntWritable(sum));
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         JobConf conf = new JobConf(WordCount.class);
         conf.setJobName("wordcount");
         conf.setOutputKeyClass(Text.class);
@@ -46,7 +48,7 @@ public class WordCount {
         conf.setInputFormat(TextInputFormat.class);
         conf.setOutputFormat(TextOutputFormat.class);
         FileInputFormat.setInputPaths(conf, new Path(args[0]));
-        FileOutputFormat.setOutputPath(conf, new Path(args[0]));
+        FileOutputFormat.setOutputPath(conf, new Path(args[1]));
 
         JobClient.runJob(conf);
     }
