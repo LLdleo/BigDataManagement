@@ -41,7 +41,7 @@ public class CreatingDatasets {
         String name = randomCharacter(randomNumber(20,10));
         name = name.substring(0, 1).toUpperCase() + name.substring(1);
         int age = randomNumber(70, 10);
-        int genderNumber = randomNumber(1, 0);
+        int genderNumber = randomNumber(2, 0);
         String gender;
         if(genderNumber == 0){
             gender = "Male";
@@ -62,7 +62,7 @@ public class CreatingDatasets {
     }
 
     private String newTransaction(int ID) {
-        int custID = randomNumber(50_000, 1);
+        int custID = randomNumber(5_000, 1);
         float transTotal = random.nextFloat() * 990 + 10;
         int transNumItems = randomNumber(10,1);
         String transDesc = randomCharacter(randomNumber(50,20));
