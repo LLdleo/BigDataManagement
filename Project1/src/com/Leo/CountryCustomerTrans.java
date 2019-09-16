@@ -6,29 +6,40 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.*;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 public class CountryCustomerTrans {
-    private HashMap custIDTOCountryCode = new HashMap();
 
-    public static class KeyValue extends HashMap{
-        java.util.Map<IntWritable, IntWritable> custIDToCountryCode = new HashMap<>();
-
-        java.util.Map<IntWritable, IntWritable> getCustIDToCountryCode() {
-            return custIDToCountryCode;
-        }
-
-        void setCustIDToCountryCode(java.util.Map<IntWritable, IntWritable> custIDToCountryCode) {
-            this.custIDToCountryCode = custIDToCountryCode;
-        }
-    }
-
-    private static KeyValue KV = new KeyValue();
-
+    public static KeyValue KV = new KeyValue();
 
     public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, IntWritable, Text> {
-        java.util.Map<IntWritable, IntWritable> CITCC = new HashMap<>();
+        java.util.Map<IntWritable, IntWritable> CITCC = KV.custIDToCountryCode;
+
+//        public java.util.Map<IntWritable, IntWritable> custIDToCountryCode = new HashMap<>();
+//
+//        protected void setup(Context context) throws IOException {
+//            BufferedReader br = null;
+//            String line = null;
+//
+//            Path[] distributePaths = DistributedCache.getLocalCacheFiles(context.getConfiguration());
+//            for(Path p : distributePaths){
+//                if(p.toString().contains("Customers")){
+//                    br = new BufferedReader(new FileReader(p.toString()));
+//                    while((line=br.readLine()) != null){
+//                        String[] values = line.split(",");
+//                        custIDToCountryCode.put(new IntWritable(Integer.parseInt(values[0])), new IntWritable(Integer.parseInt(values[4]));
+//
+//                    }
+//                }
+//            }
+//        }
 
         @Override
         public void map(LongWritable key, Text value, OutputCollector<IntWritable, Text> output, Reporter reporter) throws IOException {
@@ -38,23 +49,19 @@ public class CountryCustomerTrans {
 
             if (filePath.contains("Customers")) {
                 String[] values = line.split(",");
-
                 custID.set(Integer.parseInt(values[0]));
                 String countryCode = values[4];
-                CITCC.put(custID, new IntWritable(Integer.parseInt(countryCode)));
-
-                output.collect(custID, new Text("CC#" + countryCode));
+                output.collect(new IntWritable(Integer.parseInt(countryCode)), new Text("CI#" + custID));
             }
 
-            else if (filePath.contains("Transactions")) {
+            if (filePath.contains("Transactions")) {
                 String[] values = line.split(",");
 
                 custID.set(Integer.parseInt(values[1]));
                 String transTotal = values[2];
 
-                output.collect(custID, new Text("TT#" + transTotal));
+                output.collect(CITCC.get(custID), new Text("TT#" + transTotal));
             }
-            KV.setCustIDToCountryCode(CITCC);
         }
     }
 
@@ -64,59 +71,33 @@ public class CountryCustomerTrans {
 //        public MyCombiner(IdentityHashMap<IntWritable, IntWritable> custIDToCountryCode) {
 //            this.custIDToCountryCode = custIDToCountryCode;
 //        }
-        java.util.Map<IntWritable, IntWritable> CITCC = KV.getCustIDToCountryCode();
+//        java.util.Map<IntWritable, IntWritable> CITCC = KV.getCustIDToCountryCode();
 
         @Override
         public void reduce(IntWritable key, Iterator<Text> values, OutputCollector<IntWritable, Text> output, Reporter reporter) throws IOException {
             List<Float> transTotalRecord = new ArrayList<>();
             IntWritable countryCode = new IntWritable();
-
-            while (values.hasNext()) {
-                String value = values.next().toString();
-                if (value.startsWith("CC#")) {
-                    countryCode.set(Integer.parseInt(value.substring(3)));
-                    output.collect(countryCode, new Text("CI#" + key));
-                }
-                else if (value.startsWith("TT#")) {
-                    transTotalRecord.add(Float.parseFloat(value.substring(3)));
-                }
-            }
-
-            int transNum = transTotalRecord.size();
-
-            if (transNum > 0) {
-                for (int i = 0; i < transNum; i++) {
-                    Float transTotal = transTotalRecord.get(i);
-                    output.collect(CITCC.get(key), new Text("TT#" + transTotal));
-                }
-            }
-        }
-    }
-
-    public static class Reduce extends MapReduceBase implements Reducer<IntWritable, Text, IntWritable, Text> {
-
-        @Override
-        public void reduce(IntWritable key, Iterator<Text> values, OutputCollector<IntWritable, Text> output, Reporter reporter) throws IOException {
-            List<Float> transTotalRecord = new ArrayList<>();
-            int customerNumber = 0;
+            int countryCustNum = 0;
 
             while (values.hasNext()) {
                 String value = values.next().toString();
                 if (value.startsWith("CI#")) {
-                    customerNumber += 1;
+                    countryCustNum += 1;
                 }
                 else if (value.startsWith("TT#")) {
                     transTotalRecord.add(Float.parseFloat(value.substring(3)));
                 }
             }
+            if (countryCustNum > 0) {
+                output.collect(key, new Text("CCN," + countryCustNum));
+            }
 
             int transNum = transTotalRecord.size();
-            double maxTotal = 10.00;
-            double minTotal = 1000.00;
+            float maxTotal = 10;
+            float minTotal = 1000;
 
             if (transNum > 0) {
-                for (int i = 0; i < transNum; i++) {
-                    Float transTotal = transTotalRecord.get(i);
+                for (Float transTotal : transTotalRecord) {
                     if (maxTotal < transTotal) {
                         maxTotal = transTotal;
                     }
@@ -124,9 +105,34 @@ public class CountryCustomerTrans {
                         minTotal = transTotal;
                     }
                 }
-                output.collect(key, new Text(customerNumber + "," + minTotal + "," + maxTotal));
+                output.collect(key, new Text("MM," + minTotal + "," + maxTotal));
             }
+
         }
+    }
+
+    public static class Reduce extends MapReduceBase implements Reducer<IntWritable, Text, IntWritable, Text> {
+
+        @Override
+        public void reduce(IntWritable key, Iterator<Text> values, OutputCollector<IntWritable, Text> output, Reporter reporter) throws IOException {
+            String customerNumber = "";
+            String minTotal = "";
+            String maxTotal = "";
+
+            while (values.hasNext()) {
+                String value = values.next().toString();
+                if (value.startsWith("CCN")) {
+                    customerNumber = value.split(",")[1];
+                }
+                else if (value.startsWith("MM")) {
+                    minTotal = value.split(",")[1];
+                    maxTotal = value.split(",")[2];
+                }
+            }
+
+            output.collect(key, new Text(customerNumber + "," + minTotal + "," + maxTotal));
+        }
+
     }
 
     public static void main(String[] args) throws Exception {
@@ -141,7 +147,25 @@ public class CountryCustomerTrans {
         conf.setOutputFormat(TextOutputFormat.class);
         FileInputFormat.setInputPaths(conf, new Path(args[0]));
         FileOutputFormat.setOutputPath(conf, new Path(args[1]));
+        KV.setCustIDToCountryCode(args[0]);
 
         JobClient.runJob(conf);
+    }
+}
+
+class KeyValue extends HashMap{
+    public java.util.Map<IntWritable, IntWritable> custIDToCountryCode = new HashMap<>();
+
+    void setCustIDToCountryCode(String arg) throws IOException {
+
+        String line = null;
+        java.util.Map<IntWritable, IntWritable> custIDToCountryCode = new HashMap<>();
+        FileInputStream fileInputStream = new FileInputStream(arg + "/Customers");
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));
+        while((line = bufferedReader.readLine()) != null) {
+            String[] values = line.split(",");
+            custIDToCountryCode.put(new IntWritable(Integer.parseInt(values[0])), new IntWritable(Integer.parseInt(values[4])));
+        }
+        this.custIDToCountryCode = custIDToCountryCode;
     }
 }
