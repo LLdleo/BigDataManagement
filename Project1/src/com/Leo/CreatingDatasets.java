@@ -93,6 +93,11 @@ public class CreatingDatasets {
         writer.close();
     }
 
+    public static void main(String[] args) throws IOException {
+        CreatingDatasets cd = new CreatingDatasets(5000, 500000);
+        cd.creatingDatasets();
+    }
+
 }
 
 

@@ -61,8 +61,8 @@ public class CustomerTransaction {
                 double totalSum = 0.00;
 
                 if (transNum > 0) {
-                    for (int i = 0; i < transNum; i++) {
-                        totalSum += transTotalRecord.get(i);
+                    for (Float aFloat : transTotalRecord) {
+                        totalSum += aFloat;
                     }
                     totalSum = (float) (Math.round(totalSum * 100))/100;
                     output.collect(key, new Text("T#" + transNum + "," + totalSum));

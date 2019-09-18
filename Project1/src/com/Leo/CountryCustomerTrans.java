@@ -22,25 +22,6 @@ public class CountryCustomerTrans {
     public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, IntWritable, Text> {
         java.util.Map<IntWritable, IntWritable> CITCC = KV.custIDToCountryCode;
 
-//        public java.util.Map<IntWritable, IntWritable> custIDToCountryCode = new HashMap<>();
-//
-//        protected void setup(Context context) throws IOException {
-//            BufferedReader br = null;
-//            String line = null;
-//
-//            Path[] distributePaths = DistributedCache.getLocalCacheFiles(context.getConfiguration());
-//            for(Path p : distributePaths){
-//                if(p.toString().contains("Customers")){
-//                    br = new BufferedReader(new FileReader(p.toString()));
-//                    while((line=br.readLine()) != null){
-//                        String[] values = line.split(",");
-//                        custIDToCountryCode.put(new IntWritable(Integer.parseInt(values[0])), new IntWritable(Integer.parseInt(values[4]));
-//
-//                    }
-//                }
-//            }
-//        }
-
         @Override
         public void map(LongWritable key, Text value, OutputCollector<IntWritable, Text> output, Reporter reporter) throws IOException {
             String filePath = ((FileSplit)reporter.getInputSplit()).getPath().toString();
@@ -56,7 +37,6 @@ public class CountryCustomerTrans {
 
             if (filePath.contains("Transactions")) {
                 String[] values = line.split(",");
-
                 custID.set(Integer.parseInt(values[1]));
                 String transTotal = values[2];
 
@@ -66,12 +46,6 @@ public class CountryCustomerTrans {
     }
 
     public static class MyCombiner extends MapReduceBase implements Reducer<IntWritable, Text, IntWritable, Text> {
-//        private IdentityHashMap<IntWritable, IntWritable> custIDToCountryCode;
-//
-//        public MyCombiner(IdentityHashMap<IntWritable, IntWritable> custIDToCountryCode) {
-//            this.custIDToCountryCode = custIDToCountryCode;
-//        }
-//        java.util.Map<IntWritable, IntWritable> CITCC = KV.getCustIDToCountryCode();
 
         @Override
         public void reduce(IntWritable key, Iterator<Text> values, OutputCollector<IntWritable, Text> output, Reporter reporter) throws IOException {
@@ -107,7 +81,6 @@ public class CountryCustomerTrans {
                 }
                 output.collect(key, new Text("MM," + minTotal + "," + maxTotal));
             }
-
         }
     }
 

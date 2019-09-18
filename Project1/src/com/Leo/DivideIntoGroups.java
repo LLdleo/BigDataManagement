@@ -1,49 +1,56 @@
 package com.Leo;
 
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.*;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
 public class DivideIntoGroups {
-    public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, IntWritable, Text> {
+
+    public static KeyValues KVs = new KeyValues();
+
+    public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, Text, Text> {
 
         @Override
-        public void map(LongWritable key, Text value, OutputCollector<IntWritable, Text> output, Reporter reporter) throws IOException {
+        public void map(LongWritable key, Text value, OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
+            java.util.Map<Text, Text> CITAG = KVs.custIDToAgeGender;
             String filePath = ((FileSplit)reporter.getInputSplit()).getPath().toString();
             String line = value.toString();
-            IntWritable custID = new IntWritable();
+            String  custID = "";
 
-            if (filePath.contains("Customers")) {
+//            if (filePath.contains("Customers")) {
+//                String[] values = line.split(",");
+//                custID = values[0];
+//                String age = values[2];
+//                String gender = values[3];
+//
+//                output.collect(new Text(custID), new Text("CI#" + age + "," + gender));
+//            }
+
+            if (filePath.contains("Transactions")) {
                 String[] values = line.split(",");
-                custID.set(Integer.parseInt(values[0]));
-                String age = values[2];
-                String gender = values[3];
-
-                output.collect(custID, new Text("CI#" + age + "," + gender));
-            }
-
-            else if (filePath.contains("Transactions")) {
-                String[] values = line.split(",");
-                custID.set(Integer.parseInt(values[1]));
+                custID = values[1];
                 String transID = values[0];
                 String transTotal = values[2];
 
-                output.collect(custID, new Text("TI#" + transID + "," + transTotal));
+                output.collect(CITAG.get(new Text(custID)), new Text("TI#" + transID + "," + transTotal));
             }
         }
 
     }
 
-    public static class Combiner extends MapReduceBase implements Reducer<IntWritable, Text, Text, Text> {
+    public static class Combiner extends MapReduceBase implements Reducer<Text, Text, Text, Text> {
         @Override
-        public void reduce(IntWritable key, Iterator<Text> values, OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
+        public void reduce(Text key, Iterator<Text> values, OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
             List<String> transTotalRecord = new ArrayList<>();
             String age = "";
             String gender = "";
@@ -76,8 +83,7 @@ public class DivideIntoGroups {
             String[] keyLine = key.toString().split(",");
             int age = Integer.parseInt(keyLine[0]);
             String gender = keyLine[1];
-            String name = "";
-            String trans = "";
+
             while (values.hasNext()) {
                 String value = values.next().toString();
                 if (age >= 10 & age <20) {
@@ -137,6 +143,7 @@ public class DivideIntoGroups {
         @Override
         public void reduce(Text key, Iterator<Text> values, OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
             List<Float> transTotalRecord = new ArrayList<>();
+            float avgTransTotal = 0;
 
             while (values.hasNext()) {
                 String value = values.next().toString();
@@ -159,9 +166,10 @@ public class DivideIntoGroups {
                         maxTransTotal = transTotal;
                     }
                 }
-                float avgTransTotal = (float) Math.round(sumTransTotal / transNum * 100) / 100;
-                output.collect(key, new Text(minTransTotal + "," + maxTransTotal + "," + avgTransTotal));
+                avgTransTotal = (float) Math.round(sumTransTotal / transNum * 100) / 100;
+
             }
+            output.collect(key, new Text(minTransTotal + "," + maxTransTotal + "," + avgTransTotal));
         }
     }
 
@@ -171,14 +179,83 @@ public class DivideIntoGroups {
         conf.setOutputKeyClass(Text.class);
         conf.setOutputValueClass(Text.class);
         conf.setMapperClass(Map.class);
-        conf.setCombinerClass(Combiner.class);
+//        conf.setCombinerClass(Reduce.class);
 //        conf.setReducerClass(Reduce.class);
-//        conf.setReducerClass(Reduce2.class);
+        conf.setReducerClass(Reduce2.class);
         conf.setInputFormat(TextInputFormat.class);
         conf.setOutputFormat(TextOutputFormat.class);
         FileInputFormat.setInputPaths(conf, new Path(args[0]));
         FileOutputFormat.setOutputPath(conf, new Path(args[1]));
+        KVs.setcustIDToAgeGender(args[0]);
 
         JobClient.runJob(conf);
+    }
+}
+
+class KeyValues extends HashMap {
+    public java.util.Map<Text, Text> custIDToAgeGender = new HashMap<>();
+
+    void setcustIDToAgeGender(String arg) throws IOException {
+
+        String line = null;
+        int age = 0;
+        String gender = "";
+        java.util.Map<Text, Text> custIDToAgeGender = new HashMap<>();
+        FileInputStream fileInputStream = new FileInputStream(arg + "/Customers");
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));
+        while((line = bufferedReader.readLine()) != null) {
+            String[] values = line.split(",");
+            age = Integer.parseInt(values[2]);
+            gender = values[3];
+            if (age >= 10 & age <20) {
+                if (gender.equals("Male")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Tens Male"));
+                }
+                else if (gender.equals("Female")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Tens Female"));
+                }
+            }
+            else if (age >= 20 & age <30) {
+                if (gender.equals("Male")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Twenties Male"));
+                }
+                else if (gender.equals("Female")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Twenties Female"));
+                }
+            }
+            else if (age >= 30 & age <40) {
+                if (gender.equals("Male")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Thirties Male"));
+                }
+                else if (gender.equals("Female")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Thirties Female"));
+                }
+            }
+            else if (age >= 40 & age <50) {
+                if (gender.equals("Male")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Forties Male"));
+                }
+                else if (gender.equals("Female")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Forties Female"));
+                }
+            }
+            else if (age >= 50 & age <60) {
+                if (gender.equals("Male")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Fifties Male"));
+                }
+                else if (gender.equals("Female")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Fifties Female"));
+                }
+            }
+            else if (age >= 60 & age <=70) {
+                if (gender.equals("Male")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Sixties Male"));
+                }
+                else if (gender.equals("Female")) {
+                    custIDToAgeGender.put(new Text(values[0]), new Text("Sixties Female"));
+                }
+            }
+        }
+        this.custIDToAgeGender = custIDToAgeGender;
     }
 }
