@@ -131,7 +131,7 @@ class KeyValue extends HashMap{
 
     void setCustIDToCountryCode(String arg) throws IOException {
 
-        String line = null;
+        String line;
         java.util.Map<IntWritable, IntWritable> custIDToCountryCode = new HashMap<>();
         FileInputStream fileInputStream = new FileInputStream(arg + "/Customers");
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));

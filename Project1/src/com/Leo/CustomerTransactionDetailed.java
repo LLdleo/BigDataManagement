@@ -83,11 +83,11 @@ public class CustomerTransactionDetailed {
 
     public static void main(String[] args) throws Exception {
         JobConf conf = new JobConf(CustomerTransactionDetailed.class);
-        conf.setJobName("customerTransactionDetailed");
+        conf.setJobName("CustomerTransactionDetailed");
         conf.setOutputKeyClass(IntWritable.class);
         conf.setOutputValueClass(Text.class);
         conf.setMapperClass(Map.class);
-        conf.setCombinerClass(Reduce.class);
+//        conf.setCombinerClass(Reduce.class);
         conf.setReducerClass(Reduce.class);
         conf.setInputFormat(TextInputFormat.class);
         conf.setOutputFormat(TextOutputFormat.class);

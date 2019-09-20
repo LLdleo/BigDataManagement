@@ -1,13 +1,14 @@
--- customers = load '/user/hadoop/input/Customers/Customers' using PigStorage(',') as (custID:int, name:chararray, age:int, gender: chararray, countrycode:int, salary:float);
-customers = load '/user/hadoop/input/tests/Customers_test' using PigStorage(',') as (custID:int, name:chararray, age:int, gender: chararray, countrycode:int, salary:float);
+customers = load '/user/hadoop/input/Customers/Customers' using PigStorage(',') as (custID:int, name:chararray, age:int, gender: chararray, countrycode:int, salary:float);
+--customers = load '/user/hadoop/input/tests/Customers_test' using PigStorage(',') as (custID:int, name:chararray, age:int, gender: chararray, countrycode:int, salary:float);
 
--- transactions = load '/user/hadoop/input/Transactions/Transactions' using PigStorage(',') as (transID:int, custID:int, tranTotal:float, transNumItems:int, transDesc:chararray);
-transactions = load '/user/hadoop/input/tests/Transactions_test' using PigStorage(',') as (transID:int, custID:int, transTotal:float, transNumItems:int, transDesc:chararray);
+transactions = load '/user/hadoop/input/Transactions/Transactions' using PigStorage(',') as (transID:int, custID:int, tranTotal:float, transNumItems:int, transDesc:chararray);
+--transactions = load '/user/hadoop/input/tests/Transactions_test' using PigStorage(',') as (transID:int, custID:int, transTotal:float, transNumItems:int, transDesc:chararray);
 
 tc = JOIN transactions BY custID LEFT OUTER, customers BY custID;
 tcg = FOREACH tc GENERATE $7 as age, $8 as gender, $2 as transTotal;
 
-SPLIT tcg INTO m10 IF ((age>=10) and (age<20) and (gender == 'Male')), f10 IF ((age>=10) and (age<20) and (gender == 'Female')),
+SPLIT tcg INTO
+m10 IF ((age>=10) and (age<20) and (gender == 'Male')), f10 IF ((age>=10) and (age<20) and (gender == 'Female')),
 m20 IF ((age>=20) and (age<30) and (gender == 'Male')), f20 IF ((age>=20) and (age<30) and (gender == 'Female')),
 m30 IF ((age>=30) and (age<40) and (gender == 'Male')), f30 IF ((age>=30) and (age<40) and (gender == 'Female')),
 m40 IF ((age>=40) and (age<50) and (gender == 'Male')), f40 IF ((age>=40) and (age<50) and (gender == 'Female')),

@@ -19,6 +19,8 @@ nameTransNum = FOREACH custNameToTransNum GENERATE name, transNum;
 ntng = GROUP nameTransNum BY (transNum);
 ntn1 = ORDER ntng BY group ASC;
 ntn2 = LIMIT ntn1 1;
-ntnr = FOREACH ntn2 GENERATE idToName.name, IDTransNum.transNum;
+ntnr = FOREACH ntn2 GENERATE $0, $1;
+--this line seems no effect, the results are just like ntn2
 
+--STORE ntn2 INTO '/user/hadoop/output/query1' USING PigStorage(',');
 STORE ntnr INTO '/user/hadoop/output/query1' USING PigStorage(',');
