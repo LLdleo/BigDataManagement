@@ -123,9 +123,9 @@ public class SpatialJoin {
         conf.setOutputValueClass(Text.class);
         conf.setMapperClass(Map.class);
 //        conf.setCombinerClass(Reduce.class);
-        conf.setNumReduceTasks(1);
+//        conf.setNumReduceTasks(1);
         conf.setReducerClass(Reduce.class);
-//        conf.setReducerClass(Reduce2.class);
+        conf.setReducerClass(Reduce2.class);
         conf.setInputFormat(TextInputFormat.class);
         conf.setOutputFormat(TextOutputFormat.class);
         FileInputFormat.setInputPaths(conf, new Path(args[0]));
