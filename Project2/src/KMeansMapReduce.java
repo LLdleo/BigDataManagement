@@ -19,10 +19,7 @@ import java.util.List;
 
 public class KMeansMapReduce {
 
-
-
     public static class Map extends Mapper<LongWritable, Text, IntWritable, Text>{
-
         //中心集合
         ArrayList<ArrayList<String>> centers = null;
         //用k个中心
@@ -37,10 +34,6 @@ public class KMeansMapReduce {
             System.out.println("总共有" + k + "个中心点");
         }
 
-        /**
-         * 1.每次读取一条要分类的条记录与中心做对比，归类到对应的中心
-         * 2.以中心ID为key，中心包含的记录为value输出(例如： 1 0.2---->1为聚类中心的ID，0.2为靠近聚类中心的某个值)
-         */
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             //读取一行数据
             String point = value.toString();
