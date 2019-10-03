@@ -20,39 +20,31 @@ import java.util.List;
 public class KMeansMapReduce {
 
     public static class Map extends Mapper<LongWritable, Text, IntWritable, Text>{
-        //中心集合
         ArrayList<ArrayList<String>> centers = null;
-        //用k个中心
         int k = 0;
 
-        //读取中心
-        protected void setup(Context context) throws IOException,
-                InterruptedException {
+        protected void setup(Context context) throws IOException, InterruptedException {
             centers = KMeans.getCentersFromHDFS(context.getConfiguration().get("centersPath"),false);
-            k = centers.size();//获取中心点个数
+            k = centers.size();
             System.out.println(centers);
-            System.out.println("总共有" + k + "个中心点");
+            System.out.println("There are " + k + "center points");
         }
 
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-            //读取一行数据
             String point = value.toString();
 
             double minDistance = 15000;
             double currentDistance = 0;
             int centerIndex = 0;
 
-            //依次取出k个中心点与当前读取的记录做计算
             for(int i=0; i<k; i++){
                 String centerPoint = centers.get(i).get(1);
-                currentDistance = distance(centerPoint, point);//这里的距离算法简化处理
-                //循环找出距离该记录最接近的中心点的ID
+                currentDistance = distance(centerPoint, point);  // use distance function
                 if(currentDistance<minDistance){
                     minDistance = currentDistance;
                     centerIndex = i;
                 }
             }
-            //以中心点为Key 将记录原样输出
             context.write(new IntWritable(centerIndex+1), value);
         }
 
@@ -68,11 +60,10 @@ public class KMeansMapReduce {
 
     }
 
-    //利用reduce的归并功能以中心为Key将记录归并到一起
     public static class Reduce extends Reducer<IntWritable, Text, IntWritable, Text>{
         /**
-         * 1.Key为聚类中心的ID value为该中心的记录集合
-         * 2.计数所有记录元素的平均值，求出新的中心
+         * 1.inputKey为中心的ID inputValue为该类中所有的点
+         * 2.求平均值，作为新中心
          */
         protected void reduce(IntWritable key, Iterable<Text> values,Context context) throws IOException, InterruptedException {
             ArrayList<String> pointsList = new ArrayList<>();
@@ -100,13 +91,12 @@ public class KMeansMapReduce {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public static void run(String centerPath,String dataPath,String newCenterPath,boolean runReduce) throws IOException, ClassNotFoundException, InterruptedException{
 
         Configuration conf = new Configuration();
         conf.set("centersPath", centerPath);
-        // 设置分隔符
-        conf.set("mapred.textoutputformat.ignoreseparator","true");
+        // set separator
+        conf.set("mapred.textoutputformat.ignoreseparator", "true");
         conf.set("mapred.textoutputformat.separator", "#");
 
         Job job = new Job(conf, "mykmeans");
@@ -118,7 +108,6 @@ public class KMeansMapReduce {
         job.setMapOutputValueClass(Text.class);
 
         if(runReduce){
-            //最后依次输出不需要reduce
             job.setReducerClass(Reduce.class);
             job.setOutputKeyClass(IntWritable.class);
             job.setOutputValueClass(Text.class);
@@ -131,15 +120,15 @@ public class KMeansMapReduce {
     }
 
     public static void main(String[] args) throws ClassNotFoundException, IOException, InterruptedException {
-        String centerPath = "fileInput/Centers";  //存放中心点坐标值
-        String dataPath = "fileInput/PointsTest";  //存放待处理数据
-        String newCenterPath = "fileOutput/Centers";  //结果输出目录
+        String centerPath = "fileInput/Centers";
+        String dataPath = "fileInput/PointsTest";
+        String newCenterPath = "fileOutput/Centers";
 
         int count = 0;
 
         while(true){
             run(centerPath,dataPath,newCenterPath,true);
-            System.out.println(" 第 " + ++count + " 次计算 ");
+            System.out.println(" This is the " + ++count + " count");
             if ((KMeans.compareCenters(centerPath,newCenterPath)) | count >= 6){
                 run(centerPath,dataPath,newCenterPath,false);
                 break;
@@ -149,8 +138,6 @@ public class KMeansMapReduce {
 }
 
 class KMeans {
-
-    //读取中心文件的数据
     static ArrayList<ArrayList<String>> getCentersFromHDFS(String centersPath, boolean isDirectory) throws IOException{
         ArrayList<ArrayList<String>> result = new ArrayList<>();
         Path path = new Path(centersPath);
@@ -180,7 +167,6 @@ class KMeans {
         return result;
     }
 
-    //删掉文件
     private static void deletePath(String pathStr) throws IOException{
         Configuration conf = new Configuration();
         Path path = new Path(pathStr);
@@ -188,7 +174,6 @@ class KMeans {
         hdfs.delete(path ,true);
     }
 
-    //文本string类型转为数组类型
     private static ArrayList<String> textToArray(Text text){
         String[] fields = text.toString().split("#");
         return new ArrayList<>(Arrays.asList(fields));
@@ -204,7 +189,6 @@ class KMeans {
         return Math.sqrt(Math.pow(p1x - p2x, 2) + Math.pow(p1y - p2y, 2));
     }
 
-    //比较新旧中心点的变化情况
     static boolean compareCenters(String centerPath, String newPath) throws IOException{
 
         List<ArrayList<String>> oldCenters = KMeans.getCentersFromHDFS(centerPath,false);
@@ -217,12 +201,10 @@ class KMeans {
         }
 
         if(distance == 0.0){
-            //删掉新的中心文件以便最后依次归类输出
             KMeans.deletePath(newPath);
             return true;
-        }else{
-            //先清空中心文件，将新的中心文件复制到中心文件中，再删掉中心文件
-
+        }
+        else{
             Configuration conf = new Configuration();
             Path outPath = new Path(centerPath);
             FileSystem fileSystem = outPath.getFileSystem(conf);
@@ -239,7 +221,6 @@ class KMeans {
                 FSDataInputStream in = fileSystem.open(listFile.getPath());
                 IOUtils.copyBytes(in, out, 4096, true);
             }
-            //删掉新的中心文件以便第二次任务运行输出
             KMeans.deletePath(newPath);
         }
 

@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class SpatialJoin {
-    public static Window wd = new Window();
+    static String window = "";
 
     public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, Text, Text> {
 
@@ -20,16 +20,34 @@ public class SpatialJoin {
             String line = value.toString();
 
             if (filePath.contains("Points")) {
-                output.collect(new Text("1"), new Text("P#" + line));
+                if (window.equals("")) {
+                    output.collect(new Text("1"), new Text("P#" + line));
+//                    System.out.println("no limit");
+                }
+                else{
+                    String[] pointSplit = line.split(",");
+                    String[] wdSplit = window.split("#");
+                    int xPosition = Integer.parseInt(pointSplit[0]);
+                    int yPosition = Integer.parseInt(pointSplit[1]);
+                    int wdBottomLeftX = Integer.parseInt(wdSplit[0]);
+                    int wdBottomLeftY = Integer.parseInt(wdSplit[1]);
+                    int wdHeight = Integer.parseInt(wdSplit[2]);
+                    int wdWidth = Integer.parseInt(wdSplit[3]);
+                    if ((xPosition - wdBottomLeftX <= wdWidth) & (xPosition - wdBottomLeftX >= 0) & (yPosition - wdBottomLeftY <= wdHeight) & (yPosition - wdBottomLeftY >= 0)) {
+                        output.collect(new Text("1"), new Text("P#" + line));
+                    }
+                }
+
             }
             else if (filePath.contains("Rectangles")) {
-                if (wd.window.equals("")) {
+                if (window.equals("")) {
                     output.collect(new Text("1"), new Text("R#" + line));
 //                    System.out.println("no limit");
                 }
                 else{
+//                    System.out.println("window="+window);
                     String[] rectangleSplit = line.split(",");
-                    String[] wdSplit = wd.window.split("#");
+                    String[] wdSplit = window.split("#");
                     int bottomLeftX = Integer.parseInt(rectangleSplit[1]);
                     int bottomLeftY = Integer.parseInt(rectangleSplit[2]);
                     int height = Integer.parseInt(rectangleSplit[3]);
@@ -87,36 +105,13 @@ public class SpatialJoin {
                         }
                     }
                 }
-
-            }
-        }
-    }
-
-    public static class Reduce2 extends MapReduceBase implements Reducer<Text, Text, Text, Text> {
-
-        @Override
-        public void reduce(Text key, Iterator<Text> values, OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
-            String[] keySplit = key.toString().split(",");
-            int bottomLeftX = Integer.parseInt(keySplit[0]);
-            int bottomLeftY = Integer.parseInt(keySplit[1]);
-            int height = Integer.parseInt(keySplit[2]);
-            int width = Integer.parseInt(keySplit[3]);
-
-            while (values.hasNext()) {
-                String row = values.next().toString();
-                String[] value = row.split(",");
-                int xPosition = Integer.parseInt(value[0]);
-                int yPosition = Integer.parseInt(value[1]);
-                if ((xPosition - bottomLeftX <= width) & (xPosition - bottomLeftX >= 0) & (yPosition - bottomLeftY <= height) & (yPosition - bottomLeftY >= 0)) {
-                    output.collect(key, new Text(row));
-                }
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
         JobConf conf = new JobConf(SpatialJoin.class);
-        conf.setMemoryForReduceTask(5120);
+        conf.setMemoryForReduceTask(4096);
 //        System.out.println(memoryLimit);
         conf.setJobName("SpatialJoin");
         conf.setOutputKeyClass(Text.class);
@@ -125,25 +120,18 @@ public class SpatialJoin {
 //        conf.setCombinerClass(Reduce.class);
 //        conf.setNumReduceTasks(1);
         conf.setReducerClass(Reduce.class);
-        conf.setReducerClass(Reduce2.class);
+//        conf.setReducerClass(Reduce2.class);
         conf.setInputFormat(TextInputFormat.class);
         conf.setOutputFormat(TextOutputFormat.class);
         FileInputFormat.setInputPaths(conf, new Path(args[0]));
         FileOutputFormat.setOutputPath(conf, new Path(args[1]));
 //        System.out.println(args.length);
         if (args.length == 3) {
-            wd.setWindow(args[2]);
+            window = args[2];
             System.out.println("window set");
-            System.out.println(wd.window);
+//            System.out.println(wd.window);
         }
 
         JobClient.runJob(conf);
-    }
-}
-
-class Window {
-    public String  window = "";
-    void setWindow(String arg) {
-        this.window = arg;
     }
 }

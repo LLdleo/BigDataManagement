@@ -17,8 +17,14 @@ public class OutlierDetection {
             String[] valueSplit = value.toString().split(",");
             int xp = Integer.parseInt(valueSplit[0]);
             int yp = Integer.parseInt(valueSplit[1]);
-            int xo = xp / (4*r);
-            int yo = yp / (4*r);
+            int xo = xp / (2*r);
+            int yo = yp / (2*r);
+            if (xp==10000) {
+                xo --;
+            }
+            if (yp==10000) {
+                yo --;
+            }
             output.collect(new Text(xo + "," + yo), value);
         }
     }
