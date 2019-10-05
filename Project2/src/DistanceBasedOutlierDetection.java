@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class OutlierDetectionDoubleCheck {
+public class DistanceBasedOutlierDetection {
     private static int r;
     private static int k;
     public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, Text, Text> {
@@ -105,7 +105,7 @@ public class OutlierDetectionDoubleCheck {
     }
 
     public static void main(String[] args) throws Exception {
-        JobConf conf = new JobConf(OutlierDetectionDoubleCheck.class);
+        JobConf conf = new JobConf(DistanceBasedOutlierDetection.class);
 //        conf.setMemoryForReduceTask(4096);
 //        System.out.println(memoryLimit);
         conf.setJobName("OutlierDetection");
