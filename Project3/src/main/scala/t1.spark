@@ -1,0 +1,16 @@
+val transactions = sc.textFile("input/Transactions")
+
+val splitTransactions = transactions.map(line=>line.split(","))
+
+val arrTransactions = splitTransactions.flatMap(arr=>{
+  val transID = arr(0)
+  val custID = arr(1)
+  val transTotal = arr(2)
+  val transNumItems = arr(3)
+  val transDesc = arr(4)
+spl})
+
+
+val splitedViewsDF = viewsDF.withColumn("transID", split($"value", ",").getItem(0)).withColumn("custID", split($"value", ",").getItem(1)).withColumn("transTotal", split($"value", ",").getItem(2)).drop($"value")
+
+val transactionsDF = spark.read.format("csv").option("sep", ",").option("header", "false").load("input/Transactions")
