@@ -185,7 +185,7 @@ class KMeans {
         double p1x = Double.parseDouble(p1[0]);
         double p1y = Double.parseDouble(p1[1]);
         double p2x = Double.parseDouble(p2[0]);
-        double p2y = Double.parseDouble(p2[0]);
+        double p2y = Double.parseDouble(p2[1]);
         return Math.sqrt(Math.pow(p1x - p2x, 2) + Math.pow(p1y - p2y, 2));
     }
 
