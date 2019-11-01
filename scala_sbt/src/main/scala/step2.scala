@@ -33,6 +33,17 @@ object step2 {
   }
 
   def get_cell_neighbors(cell_number: Int, row_length: Int = 500): Array[Int] = {
+    var not_in_list = Array()
+    for (i <- 0 until row_length) {
+      if (i == 0 or i == row_length-1) {
+        for (j <- 1 to row_length) {
+          not_in_list +=  i*row_length+j
+        }
+      }
+      else {
+        var not_in_list = not_in_list + Array[int](i*row_length+1,(i+1)*row_length)
+      }
+    }
     val top_neighbor_number = cell_number - row_length
     val bottom_neighbor_number = cell_number + row_length
     var neighbor_numbers = Array[Int](top_neighbor_number, bottom_neighbor_number)
@@ -62,8 +73,7 @@ object step2 {
     val conf = new SparkConf().setAppName("Step2 Application").setMaster("local")
     val sc = new SparkContext(conf)
 
-    val pointsRDD = sc.textFile("Points").
-      map(line => line.split(",").map(elem => elem.trim))
+    val pointsRDD = sc.textFile("Points").map(line => line.split(",").map(elem => elem.trim))
 
     //  Cells with count of points
     val cellPointsRDD = pointsRDD.map({point => (get_cell_number_for_point(point), 1)}).
@@ -71,18 +81,22 @@ object step2 {
 
     // file line count
     val lines = pointsRDD.count()
-    // Density for cell
-    val cell_number = 502
-    val cell = get_cell_coordinates(cell_number)
-    val cell501RDD = pointsRDD.filter(point => is_point_in_cell(point, cell))
-    val x_count = cell501RDD.count
+    println(lines)
+    if (false) {
+      // Density for cell
+      val cell_number = 502
+      val cell = get_cell_coordinates(cell_number)
+      val cell501RDD = pointsRDD.filter(point => is_point_in_cell(point, cell))
+      val x_count = cell501RDD.count
 
-    val cell501NeighborNumbers = get_cell_neighbors(cell_number)
-    val y_count = cell501NeighborNumbers.map(number => get_cell_coordinates(number)).
-      map(neighbor => pointsRDD.filter(point => is_point_in_cell(point, neighbor))).
-      map(rdd => rdd.count)
-    val y_count_average = y_count.sum / y_count.length
+      val cell501NeighborNumbers = get_cell_neighbors(cell_number)
+      val y_count = cell501NeighborNumbers.map(number => get_cell_coordinates(number)).
+        map(neighbor => pointsRDD.filter(point => is_point_in_cell(point, neighbor))).
+        map(rdd => rdd.count)
+      val y_count_average = y_count.sum / y_count.length
 
-    println(s"$x_count / $y_count_average = ${x_count.toFloat / y_count_average.toFloat}")
+      println(s"$x_count / $y_count_average = ${x_count.toFloat / y_count_average.toFloat}")
+    }
+
   }
 }
