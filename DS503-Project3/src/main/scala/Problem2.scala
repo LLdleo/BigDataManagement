@@ -92,15 +92,13 @@ object Problem2 {
     val cellRDD = cellCount.rdd.map(row => (row(0).toString.toInt,row(1).toString.toInt))
     val cellCountMap = cellRDD.map(pair=>Map[Int,Int](pair._1 -> pair._2)).collect().flatten.toMap
 
-//    val densityRDD = sc.parallelize(Seq(List.range(1,length*length)))
-//    val rowRDD = densityRDD.flatMap(_.splitAt())
-//    rowRDD.take(50).foreach(println)
-
     val densityRDD = cellRDD.map(pair => (pair._1,calculate(pair._1,cellCountMap,length)))
     val top50_i = densityRDD.sortBy(_._2,ascending=false).take(50)
     val top50_i_rdd = sc.parallelize(top50_i)
-    top50_i_rdd.saveAsTextFile("output/top50_i")  // save top 50 index into output/top50_i
+    // this is the result of the Top 50 grid cells w.r.t Relative-DensityIndex
+    top50_i_rdd.saveAsTextFile("output/top50_index")  // save top 50 index into output/top50_i
 
+    // this is the result of the Neighbors of the Top 50
     val new_rdd = top50_i_rdd.map(pair=>(pair._1,calculate_neighbors_index(pair._1,cellCountMap,length).toList))
     new_rdd.saveAsTextFile("output/top50_neighbors_index")
 
