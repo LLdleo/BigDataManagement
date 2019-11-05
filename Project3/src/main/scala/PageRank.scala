@@ -1,5 +1,4 @@
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.SparkSession
 
 object PageRank {
   def main(args: Array[String]): Unit = {

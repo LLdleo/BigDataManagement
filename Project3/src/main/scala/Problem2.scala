@@ -1,7 +1,5 @@
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.SparkContext._
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, DataFrameReader, Row, SQLContext, SparkSession}
 
 
 object Problem2 {
@@ -9,15 +7,15 @@ object Problem2 {
     override def toString: String = s"($x1, $x2, $y1, $y2)"
   }
 
-  def get_cell_boundary(cell_number: Int, row_length: Int = 500): CellBoundary = {
+  def get_cell_boundary(cell_number: Int, row_length: Int = 500, cell_size: Int = 20): CellBoundary = {
     val x = (cell_number - 1) % row_length
     val y = Math.floor((cell_number - 1) / row_length).toInt
 
-    val x1 = x * 20
-    val x2 = (x + 1) * 20
+    val x1 = x * cell_size
+    val x2 = (x + 1) * cell_size
 
-    val y1 = y * 20
-    val y2 = (y + 1) * 20
+    val y1 = y * cell_size
+    val y2 = (y + 1) * cell_size
     new CellBoundary(x1, x2, y1, y2)
   }
 
