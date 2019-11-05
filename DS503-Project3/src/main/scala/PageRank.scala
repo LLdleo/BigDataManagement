@@ -15,19 +15,19 @@ object PageRank {
 //    linkGroupCount.take(50).foreach(println)
 //    linkGroup.collect().take(50).foreach(println)
 
-    var ranks = linkGroup.map(pair=>(pair._1,1.0))
+    var ranks = linkGroup.distinct().map(pair=>(pair._1,1.0))
 
-    for (_ <- 1 to 50) {
-      val contribs = linkGroup.join(ranks,2)
-      val flatMapRDD = contribs.flatMap{
+    for (_ <- 1 to 2) {
+      val contrib = linkGroup.join(ranks,2)
+      val flatMapRDD = contrib.flatMap{
         case (url,(linkGroup,rank)) => linkGroup.map(dest=>(dest,rank/linkGroup.length))
       }
-      val reduceByKeyRDD = flatMapRDD.reduceByKey(_ + _,2)
-      ranks=reduceByKeyRDD.map(pair=>(pair._1,(0.15 + 0.85 * pair._2).toFloat))
-    }
+//      val reduceByKeyRDD = flatMapRDD.reduceByKey(_ + _,2)
+      ranks = flatMapRDD.reduceByKey(_ + _,2)
 
+    }
 //    ranks.collect().take(50).foreach(println)
-    sc.parallelize(ranks.sortBy(_._2,ascending=false).take(100)).saveAsTextFile("output/PageRank")
+    sc.parallelize(ranks.sortBy(_._2,ascending=false).take(100)).saveAsTextFile("output/PageRankN")
 
 
   }
