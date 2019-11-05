@@ -1,0 +1,53 @@
+val transactions = sc.textFile("input/Transactions")
+
+val splitTransactions = transactions.map(line=>line.split(","))
+
+val arrTransactions = splitTransactions.flatMap(arr=>{
+  val transID = arr(0)
+  val custID = arr(1)
+  val transTotal = arr(2)
+  val transNumItems = arr(3)
+  val transDesc = arr(4)
+spl})
+
+
+val splitedViewsDF = viewsDF.withColumn("transID", split($"value", ",").getItem(0)).withColumn("custID", split($"value", ",").getItem(1)).withColumn("transTotal", split($"value", ",").getItem(2)).drop($"value")
+
+//(1) T1:
+val transactionsDF = spark.read.format("csv").option("sep", ",").option("header", "false").load("input/Transactions")
+
+val newColumns = Seq("TransID","CustID","TransTotal","TransNumItems","TransDesc")
+val temp1 = transactionsDF.toDF(newColumns:_*)
+org.apache.spark.sql.types.FloatType
+val temp2 = temp1.withColumn("TransID", tDF("TransID").cast(org.apache.spark.sql.types.IntegerType)).withColumn("CustID", tDF("CustID").cast(org.apache.spark.sql.types.IntegerType)).withColumn("TransTotal", tDF("TransTotal").cast(org.apache.spark.sql.types.FloatType)).withColumn("TransNumItems", tDF("TransNumItems").cast(org.apache.spark.sql.types.IntegerType))
+val result1 = temp2.filter("TransTotal < 200")
+result1.write.format("csv").save("output/t1Result")
+
+//(2) T2:
+result1.createOrReplaceTempView("Transactions")
+val summary1=spark.sql("Select sum(TransTotal),avg(TransTotal),min(TransTotal),max(TransTotal) from Transactions group by TransNumItems")
+summary1.write.format("csv").save("output/t2Result")
+
+//(3):
+
+
+//(4) T3:
+val summary2=spark.sql("SELECT CustID,COUNT(CustID) as count1 FROM Transactions Group By CustID")
+summary2.write.format("csv").save("output/t3Result")
+
+//(5) T4:
+val result2 = temp2.filter("TransTotal < 600")
+result2.write.format("csv").save("output/t4Result")
+
+//(6) T5:
+result2.createOrReplaceTempView("Transactions2")
+val summary3=spark.sql("SELECT CustID,COUNT(CustID) as count2 FROM Transactions2 Group By CustID")
+summary3.write.format("csv").save("output/t5Result")
+
+//(7) T6:
+summary2.createOrReplaceTempView("TC1")
+summary3.createOrReplaceTempView("TC2")
+val summary4=spark.sql("SELECT TC1.CustID FROM TC1,TC2 WHERE TC1.CustID=Tc2.CustID and TC1.count1>(5*TC2.count2)")
+summary4.write.format("csv").save("output/t6Result")
+
+//(8):
