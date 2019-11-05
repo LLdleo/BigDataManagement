@@ -12,13 +12,13 @@ object PageRank {
 
     var ranks = linkGroup.distinct().map(pair=>(pair._1,1.0))
 
-    for (_ <- 1 to 2) {
+    for (_ <- 1 to 50) {
       val contrib = linkGroup.join(ranks,2)
       val flatMapRDD = contrib.flatMap{
         case (url,(linkGroup,rank)) => linkGroup.map(dest=>(dest,rank/linkGroup.length))
       }
       ranks = flatMapRDD.reduceByKey(_ + _,2)
     }
-    sc.parallelize(ranks.sortBy(_._2,ascending=false).take(100)).saveAsTextFile("output/PageRankN")
+    sc.parallelize(ranks.sortBy(_._2,ascending=false).take(100)).saveAsTextFile("output/PageRank")
   }
 }
