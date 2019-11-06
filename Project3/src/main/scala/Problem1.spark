@@ -21,7 +21,7 @@ TransactionsDF.printSchema
 
 
 // (1) T1:
-val result1 = TransactionsDF.filter("TransTotal < 200")
+val result1 = TransactionsDF.filter("TransTotal >= 200")
 result1.show
 
 // (2) T2:
