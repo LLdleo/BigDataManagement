@@ -1,4 +1,5 @@
 # DS503
-WPI DS503 Big Data Management Project Repository
+Big Data Management Project Repository
 
-some changes
+Tools:
+Hadoop(Java), Pig, Spark(Scala), MongoDB
